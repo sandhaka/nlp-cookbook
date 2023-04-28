@@ -6,7 +6,8 @@ Containing several starter code and examples about NLP in Python
   - [x] [Intro](/spacy_intro.ipynb)
   - [x] [Analysis](/spacy_data_analysis.ipynb)
   - [x] [Pipelines](/spacy_pipelines.ipynb)
-  - [x] [Training](/spacy_training.ipynb)
+  - [x] [Training Cli](/spacy_training.ipynb)
+  - [ ] Full Example
 - [ ] PyTorch
 
 </samp>
