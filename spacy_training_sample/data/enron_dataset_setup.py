@@ -1,5 +1,3 @@
-import copy
-
 import pandas as pd
 import re
 import json
