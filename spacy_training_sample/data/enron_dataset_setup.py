@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 import re
 import json
@@ -5,6 +7,7 @@ import typer
 
 from random import shuffle
 from pathlib import Path
+from collections import deque
 
 from spacy_training_sample.data.set_element import SetElement, SetElementEncoder
 
@@ -23,6 +26,24 @@ def main(
     def is_from_enron(text):
         return re.match(".*@enron.com.*", text, re.IGNORECASE) is not None
 
+    def extract_body(msg):
+        lines = msg.split("\n")
+        lines.reverse()
+        b = ""
+        q = deque(lines)
+        while q:
+            line = q.pop()
+            if line != "":
+                continue
+            while q:
+                next_line = q.pop()
+                if re.match(".*-----Original Message-----.*", next_line) is not None:  # Ignore attached messages
+                    return b
+                if re.match(".*--- Forwarded by.*", next_line) is not None:  # Ignore forwarding info
+                    return b
+                b += next_line + "\n"
+        return b
+
     for index, row in data.iterrows():
         message = row[2]
         folder_match = re.search("X-Folder:.*", message)
@@ -30,15 +51,14 @@ def main(
 
         folder_name = message[folder_match.start() + 9 : folder_match.end()].strip()
         from_address = message[from_match.start() + 5 : from_match.end()].strip()
+        print(extract_body(message))
         # Consider only inbox email
         if is_inbox(folder_name) and is_from_enron(from_address):
             to_match = re.search("To:.*", message)
             sub_match = re.search("Subject:.*", message)
             to_address = message[to_match.start() + 3 : to_match.end()].strip()
             subject = message[sub_match.start() + 8 : sub_match.end()].strip()
-            body = "".join(
-                map(lambda x: x[1] + "\n", re.findall("^(?!.*\n){0,15}(.|\n)*?(.*)", message, re.MULTILINE)[15:])
-            )
+            body = extract_body(message)
             e = (int(row[0]), from_address, to_address, subject, body, dict([(i, False) for i in labels]))
             i = SetElement(e[0], e[4], e[5])
             items.append(i)
