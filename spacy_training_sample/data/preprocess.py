@@ -5,7 +5,7 @@ import typer
 from pathlib import Path
 from spacy.tokens import DocBin
 
-from spacy_training_sample.data.set_element import SetElement, SetElementDecoder
+from set_element import SetElement, SetElementDecoder
 
 
 def main(

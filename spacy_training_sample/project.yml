@@ -1,0 +1,60 @@
+title: "Text classification test"
+# Variables can be referenced across the project.yml using ${vars.var_name}
+vars:
+  config: "config/sample.config.cfg"
+  name: "textcat_docs"
+  version: "0.0.0"
+  gpu_id: -1
+spacy_version: ">=3.0.6,<4.0.0"
+
+# These are the directories that the project needs. The project CLI will make
+# sure that they always exist.
+directories: ["config", "data", "training"]
+
+# Workflows are sequences of commands (see below) executed in order. You can
+# run them via "spacy project run [workflow]". If a commands's inputs/outputs
+# haven't changed, it won't be re-run.
+workflows:
+  all:
+    - preprocess
+    - train
+    - evaluate
+
+# Project commands, specified in a style similar to CI config files (e.g. Azure
+# pipelines). The name is the command name that lets you trigger the command
+# via "spacy project run [command] [path]". The help message is optional and
+# shown when executing "spacy project run [optional command] [path] --help".
+commands:
+  - name: "preprocess"
+    help: "Convert the data to spaCy's binary format"
+    script:
+      - "python data/preprocess.py data/data.train.json train.spacy"
+      - "python data/preprocess.py data/data.eval.json eval.spacy"
+    deps:
+      - "data/data.train.json"
+      - "data/data.eval.json"
+      - "data/preprocess.py"
+    outputs:
+      - "train.spacy"
+      - "eval.spacy"
+
+  - name: "train"
+    help: "Train a text classification model"
+    script:
+      - "python -m spacy train config/sample.config.cfg --output training --paths.train train.spacy --paths.dev eval.spacy --gpu-id ${vars.gpu_id}"
+    deps:
+      - "train.spacy"
+      - "eval.spacy"
+      - "config/sample.config.cfg"
+    outputs:
+      - "model-best"
+
+  - name: "evaluate"
+    help: "Evaluate the model and export metrics"
+    script:
+      - "python -m spacy evaluate training/model-best eval.spacy --output training/metrics.json --gpu-id ${vars.gpu_id}"
+    deps:
+      - "eval.spacy"
+      - "training/model-best"
+    outputs:
+      - "training/metrics.json"
