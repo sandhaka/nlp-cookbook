@@ -47,6 +47,7 @@ commands:
       - "eval.spacy"
       - "config/sample.config.cfg"
     outputs:
+
       - "model-best"
 
   - name: "evaluate"
